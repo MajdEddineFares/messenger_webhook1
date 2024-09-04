@@ -2,14 +2,15 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const app = express();
-//const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Replace with your verification token
-const VERIFY_TOKEN = 'potatoai';
-
+// Verification endpoint for Facebook Webhook
 app.get('/webhook', (req, res) => {
+  const VERIFY_TOKEN = 'your_verify_token';
+
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
@@ -21,16 +22,28 @@ app.get('/webhook', (req, res) => {
     } else {
       res.sendStatus(403);
     }
+  } else {
+    res.sendStatus(400);
   }
 });
 
+// Webhook endpoint to receive messages
 app.post('/webhook', (req, res) => {
-  const data = req.body;
+  const body = req.body;
 
-  if (data.object === 'page') {
-    data.entry.forEach((entry) => {
-      const webhook_event = entry.messaging[0];
-      console.log('Webhook event: ', webhook_event);
+  if (body.object === 'page') {
+    body.entry.forEach(function(entry) {
+      let webhookEvent = entry.messaging[0];
+      console.log(webhookEvent);
+
+      // Handle the message here (for example, send a response back)
+      if (webhookEvent.message && webhookEvent.sender) {
+        const senderId = webhookEvent.sender.id;
+        const messageText = webhookEvent.message.text;
+
+        console.log(`Received message from user ${senderId}: ${messageText}`);
+        // Here, you would normally send a response back using the Facebook Send API.
+      }
     });
 
     res.status(200).send('EVENT_RECEIVED');
@@ -39,6 +52,6 @@ app.post('/webhook', (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
